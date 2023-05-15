@@ -62,8 +62,9 @@ namespace AlSatBot.services
                     
                     var ticker1 = apiInstance.ListTickers(coin, _timezone);
                     var price1 = ticker1[0];
+                    var RoundLastRsi = Math.Round(lastRsi, 3);
 
-                    data += $" {coin} icin RSI: {lastRsi} fiyat ise: {price1.Last}   #  ++";
+                    data += $" {coin} icin RSI: {RoundLastRsi} fiyat ise: {price1.Last}   #  ++";
 
                     // RSI alım fırsatı
                     if (lastRsi < rsi_buy_threshold)
