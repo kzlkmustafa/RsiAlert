@@ -1,0 +1,179 @@
+﻿@{
+    ViewBag.Title = "Home Page";
+}
+<script src="https://code.jquery.com/jquery-3.7.0.js"
+        integrity="sha256-JlqSTELeR4TLqP0OG9dxM7yDPqX1ox/HfgiSLBj8+kM="
+        crossorigin="anonymous"></script>
+
+<head>
+    <title>RSI Bot</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/site.css" />
+    <style>
+        .status-message {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12 col-md-6">
+                <div class="budami">
+                    <form id="myform" class="adacik">
+                        <div class="title">Hoşgeldiniz</div>
+                        <p class="subtitle h5"> Gate.io verileri kullanan RSI indicator uyarı botu</p>
+                        <div class="text-warning">lütfen Coinler arasına virgül koyun</div>
+
+                        <div class="input-container ic1 form-group">
+                            <input id="Coins" class="input" type="text" name="Coins" placeholder=" " required />
+                            <div class="cut"></div>
+                            <label for="Coins" class="placeholder">Coins</label>
+                        </div>
+                        <div class="input-container ic1 form-group">
+                            <input id="rsiBuyThreshold" class="input" type="number" name="rsiBuyThreshold" placeholder=" " required min="0" max="100" />
+                            <div class="cut"></div>
+                            <label for="rsiBuyThreshold" class="placeholder">RSI Alım Uyarı Noktası</label>
+                        </div>
+                        <div class="input-container ic1 form-group">
+                            <input id="rsiSellThreshold" class="input" type="number" name="rsiSellThreshold" placeholder=" " required min="0" max="100" />
+                            <div class="cut"></div>
+                            <label for="rsiSellThreshold" class="placeholder">RSI Satım Uyarı Noktası</label>
+                        </div>
+                        <div class="input-container ic1 form-group">
+                            <select id="hourPeriod" class="input" name="hourPeriod">
+                                <option value="5m">5 dakika</option>
+                                <option value="15m">15 dakika</option>
+                                <option value="30m">30 dakika</option>
+                                <option value="1h">1 Saat</option>
+                                <option value="4h">4 saat</option>
+                                <option value="1d">1 günlük</option>
+
+                            </select>
+                            <div class="cut"></div>
+                            <label for="hourPeriod" class="placeholder">Mum süresi</label>
+                        </div>
+                        <div class="input-container ic1 form-group">
+                            <input id="ApiKey" class="input" type="text" name="ApiKey" placeholder=" " required min="0" max="100" />
+                            <div class="cut"></div>
+                            <label for="ApiKey" class="placeholder">API Key</label>
+                        </div>
+                        <div class="input-container ic1 form-group">
+                            <input id="SecretKey" class="input" type="text" name="SecretKey" placeholder=" " required min="0" max="100" />
+                            <div class="cut"></div>
+                            <label for="SecretKey" class="placeholder">Apı Secret Key</label>
+                        </div>
+
+                        <button type="text" id="startBtn" class="submit bg-primary">Botu Başlat</button>
+                        <button type="text" id="stopBtn" class="submit bg-danger" >Botu Durdur</button>
+                        <p class="text-danger">Bu sayfada alacağınız hiçbir veri YATIRIM TAVSİYESİ DEĞİLDİR</p>
+                    </form>
+                </div>
+               
+            </div>
+            <div class="col-12 col-md-6">
+                <div class="budami">
+                    <div class="adacik">
+                        <div class="status-message rounded m-1 col text-warning h4">Bot Hazır...</div>
+                        <br />
+                        <p class="result rounded m-1 col text-white"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script>
+        var ajaxInterval;
+        var isRunning = false;
+        var formData = new FormData();
+
+        $(document).ready(function () {
+            
+            $('#startBtn').click(function (e) {
+                e.preventDefault();
+                if (!isRunning) {
+                    isRunning = true;
+                    $('#startBtn').attr('disabled', true);
+                    $('#stopBtn').attr('disabled', false);
+                    $('.status-message').text('Bot başlatıldı!!');
+
+                    formData = new FormData();
+
+                    updateFormData();
+
+                    $('#Coins').prop('disabled', true);
+                    $('#rsiBuyThreshold').prop('disabled', true);
+                    $('#rsiSellThreshold').prop('disabled', true);
+                    $('#hourPeriod').prop('disabled', true);
+                    $('#ApiKey').prop('disabled', true);
+                    $('#SecretKey').prop('disabled', true);
+
+                    ajaxInterval = setInterval(doAjaxRequest, 1000); // Her 1 saniyede bir çağrılır
+                }
+            });
+
+            $('#stopBtn').click(function (e) {
+                e.preventDefault();
+                if (isRunning) {
+                    isRunning = false;
+                    clearInterval(ajaxInterval);
+                    $('#startBtn').attr('disabled', false);
+                    $('#stopBtn').attr('disabled', true);
+                    $('.status-message').html("Bot Durduruldu!!");
+
+                    $('#Coins').prop('disabled', false);
+                    $('#rsiBuyThreshold').prop('disabled', false);
+                    $('#rsiSellThreshold').prop('disabled', false);
+                    $('#hourPeriod').prop('disabled', false);
+                    $('#ApiKey').prop('disabled', false);
+                    $('#SecretKey').prop('disabled', false);
+
+                    resultTimeout = setTimeout(function () {
+                        $('.result').empty();
+                    }, 2000);
+                }
+            });
+
+            
+        });
+        function doAjaxRequest() {
+            
+            $.ajax({
+                url: 'getmyresult',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    var parsedResponse = response.split('++');
+                    var result = '';
+                    for (var i = 0; i < parsedResponse.length; i++) {
+                        var parts = parsedResponse[i].split('#');
+                        var content = parts[0];
+                        var className = parts[1];
+                        result += '<span class="' + className + '">' + content + '</span><br>';
+                    }
+                    $('.result').html(result);
+                },
+                error: function() {
+                    // Hata işlemleri
+                    $('.result').html("Veriler gönderilirken bir hata oluştu");
+                }
+            });
+        }
+        function updateFormData() {
+            formData = new FormData();
+            formData.append('Coins', $('#Coins').val());
+            formData.append('rsiBuyThreshold', $('#rsiBuyThreshold').val());
+            formData.append('rsiSellThreshold', $('#rsiSellThreshold').val());
+            formData.append('hourPeriod', $('#hourPeriod').val());
+            formData.append('ApiKey', $('#ApiKey').val());
+            formData.append('SecretKey', $('#SecretKey').val());
+        };
+
+       
+    </script>
+</body>
